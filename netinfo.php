@@ -64,7 +64,7 @@
 			document.getElementById("showarp").checked = false;
 		}
 	</script>
-	<form method="post" style="display: inline;" name="inputstuff">
+	<form method="post" style="display: inline;" name="inputstuff" id="inputstuff">
 	<table border=0 style="display: inline-table;">
 		<tr>
 			<td>Device IP:</td>
@@ -169,25 +169,43 @@
 				<table border=0 style="display: inline-table;">
 					<tr>
 						<td style="text-align: left;">Switch Type:</td>
-						<td><input type="radio" name="vlanchoice" value="cisco"<?php if($_POST['vlanchoice']=="cisco" || (!$_POST['vlanchoice']=="cisco" && $defaultvlanchoice=="cisco")) echo " checked"; ?>>Cisco</td>
-						<td><input type="radio" name="vlanchoice" value="avaya"<?php if($_POST['vlanchoice']=="avaya" || (!$_POST['vlanchoice']=="avaya" && $defaultvlanchoice=="avaya")) echo " checked"; ?>>Avaya</td>
-						<td><input type="radio" name="vlanchoice" value="juniper"<?php if($_POST['vlanchoice']=="juniper" || (!$_POST['vlanchoice']=="juniper" && $defaultvlanchoice=="juniper")) echo " checked"; ?>>Juniper</td>
+						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="cisco"<?php if($_POST['vlanchoice']=="cisco" || (!$_POST['vlanchoice']=="cisco" && $defaultvlanchoice=="cisco")) echo " checked"; ?>>Cisco</td>
+						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="avaya"<?php if($_POST['vlanchoice']=="avaya" || (!$_POST['vlanchoice']=="avaya" && $defaultvlanchoice=="avaya")) echo " checked"; ?>>Avaya</td>
+						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="juniper"<?php if($_POST['vlanchoice']=="juniper" || (!$_POST['vlanchoice']=="juniper" && $defaultvlanchoice=="juniper")) echo " checked"; ?>>Juniper</td>
 					</tr>
 					<tr>
 						<td>&nbsp;</td>
-						<td><input type="radio" name="vlanchoice" value="netgear"<?php if($_POST['vlanchoice']=="netgear" || (!$_POST['vlanchoice']=="netgear" && $defaultvlanchoice=="netgear")) echo " checked"; ?>>Netgear</td>
-						<td><input type="radio" name="vlanchoice" value="h3c"<?php if($_POST['vlanchoice']=="h3c" || (!$_POST['vlanchoice']=="h3c" && $defaultvlanchoice=="h3c")) echo " checked"; ?>>H3C</td>
+						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="netgear"<?php if($_POST['vlanchoice']=="netgear" || (!$_POST['vlanchoice']=="netgear" && $defaultvlanchoice=="netgear")) echo " checked"; ?>>Netgear</td>
+						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="h3c"<?php if($_POST['vlanchoice']=="h3c" || (!$_POST['vlanchoice']=="h3c" && $defaultvlanchoice=="h3c")) echo " checked"; ?>>H3C</td>
 						<td>&nbsp;</td>
 					</tr>
 				</table>
 			</td>
 		</tr>
+		<tr name="vlanextrarow" id="vlanextrarow" <?php if($_POST['vlanchooser'] && $_POST['vlanchoice']=="cisco"){ echo "style=\"display: table-row;\""; } else { echo "style=\"display: none;\""; } ?>>
+			<td>&nbsp;&nbsp;&nbsp;&nbsp;
+			<input name="vlanextra" id="vlanextra" type="checkbox" <?php if($_POST['vlanextra']) echo "checked"; ?> />&nbsp;Show Extra VLAN Info</td>
+		</tr>
 		<script type="text/javascript">
-			function toggleVLAN() {
+			function toggleVLAN(vlanchoice) {
 				if (document.getElementById("vlanrow").style.display=="none") {
 					document.getElementById("vlanrow").style.display="table-row";
 				} else {
 					document.getElementById("vlanrow").style.display="none";
+					document.getElementById("vlanextrarow").style.display="none";
+					document.getElementById("vlanextra").checked = false;
+				}
+			}
+		</script>
+		<script type="text/javascript">
+			function toggleVLANextra(selected) {
+				if (selected.value=="cisco"){
+					document.getElementById("vlanextrarow").style.display="table-row";
+					//alert('Cisco selected: ' + selected.value);
+				} else {
+					document.getElementById("vlanextrarow").style.display="none";
+					//alert('Something else selected: ' + selected.value);
+					document.getElementById("vlanextra").checked = false;
 				}
 			}
 		</script>
@@ -196,7 +214,7 @@
 		</tr>
 		<tr name="macouirow" id="macouirow" <?php if($_POST['clientmac']){ echo "style=\"display: table-row;\""; } else { echo "style=\"display: none;\""; } ?>>
 			<td>&nbsp;&nbsp;&nbsp;&nbsp;
-			<input name="macoui" id="macoui" type="checkbox" <?php if($_POST['macoui'] || $_POST['macoui']) echo "checked"; ?> />&nbsp;Show MAC address OUI Info</td>
+			<input name="macoui" id="macoui" type="checkbox" <?php if($_POST['macoui']) echo "checked"; ?> />&nbsp;Show MAC address OUI Info</td>
 		</tr>
 		<script type="text/javascript">
 			function disable_clientarp() {
@@ -396,267 +414,300 @@
 		//Needed for H3C VLAN Hex
 		$h3cidcnt=0; $h3clast=0; $vlanidtmp=""; $vlanhextmp=""; $rowcounter=0;
 		foreach($walkresult as $snmpval){
-			//Handle several MIBS that have interface ID at the end of the MIB, then a space, then the value
-			/*
-			SNMPv2-SMI::transmission.7.2.1.19 			- Interface duplex
-			SNMPv2-SMI::transmission.7.2.1.7 			- Interface duplex alternative method
-			SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2 	- Cisco VLAN
-			SNMPv2-SMI::enterprises.2272.1.3.3.1.7 		- Avaya VLAN port PVID
-			SNMPv2-SMI::enterprises.2272.1.3.3.1.4 		- Avaya VLAN port tagging
-			SNMPv2-SMI::enterprises.2272.1.3.3.1.3 		- Avaya VLAN port members
-			1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5			- Juniper VLAN ID's
-			1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5			- Juniper VLAN port mode
-			*/
-			if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || preg_match('/SNMPv2-SMI::enterprises.2272.1.3.3.1/',$commandstring) || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5")){
-				//Split value and ID
-				if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.3"){
-					list($remain,$val)=explode(' ',$snmpval,2);
-				} else {
-					list($remain,$val)=explode(' ',$snmpval);
-				}
-				//Get ID by reversing string and exploding on first instance of "."
-				list($id,$junk)=explode(".", strrev($remain));
-				//Reverse the ID back again
-				$id=strrev($id);
-				//Standard way using 7.2.1.19
-				if($commandstring=="SNMPv2-SMI::transmission.7.2.1.19"){
-					if($val==3){
-						$val="Full";
-					} else if($val==2){
-						$val="Half";
-					} else {
-						$val="";
-					}
+			if($snmpval){
+				//Handle several MIBS that have interface ID at the end of the MIB, then a space, then the value
 				/*
-				Non-standard way using 7.2.1.7
-				http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.2.1.10.7.2.1.7
+				SNMPv2-SMI::transmission.7.2.1.19 			- Interface duplex
+				SNMPv2-SMI::transmission.7.2.1.7 			- Interface duplex alternative method
+				SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2 	- Cisco VLAN
+				SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1	- Cisco VLAN status
+				SNMPv2-SMI::enterprises.2272.1.3.3.1.7 		- Avaya VLAN port PVID
+				SNMPv2-SMI::enterprises.2272.1.3.3.1.4 		- Avaya VLAN port tagging
+				SNMPv2-SMI::enterprises.2272.1.3.3.1.3 		- Avaya VLAN port members
+				1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5			- Juniper VLAN ID's
+				1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5			- Juniper VLAN port mode
 				*/
-				} else if($commandstring=="SNMPv2-SMI::transmission.7.2.1.7"){
-					if($val==0){
-						$val="Full";
-					} else if($val>0){
-						$val="Half";
+				if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || preg_match('/SNMPv2-SMI::enterprises.2272.1.3.3.1/',$commandstring) || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1")){
+					//Split value and ID
+					if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.3"){
+						list($remain,$val)=explode(' ',$snmpval,2);
 					} else {
-						$val="";
+						list($remain,$val)=explode(' ',$snmpval);
 					}
-				} else if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.4"){
-					if($val==1){
-						$val="UntagAll";
-					} else if($val==2){
-						$val="TagAll";
-					} else if($val==5){
-						$val="UntagPvidOnly";
-					} else if($val==6){
-						$val="TagPvidOnly";
-					} else {
-						$val="Unknown";
-					}
-				//Avaya VLAN port members
-				} else if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.3"){
-					//Get rid of quotes and extra space
-					$val=trim(preg_replace('/"/','',$val));
-					//Replace every other space with a comma
+					//Get ID by reversing string and exploding on first instance of "."
+					list($id,$junk)=explode(".", strrev($remain));
+					//Reverse the ID back again
+					$id=strrev($id);
+					//Standard way using 7.2.1.19
+					if($commandstring=="SNMPv2-SMI::transmission.7.2.1.19"){
+						if($val==3){
+							$val="Full";
+						} else if($val==2){
+							$val="Half";
+						} else {
+							$val="";
+						}
 					/*
-					VLAN values are in hex like this:
-					00 01 00 28 00 29 03 E8
-					Replacing every other space with a comma lets the code isolate each VLAN
-					00 01,00 28,00 29,03 E8
-					Got code from here: http://stackoverflow.com/questions/4194818/how-to-replace-every-second-white-space
+					Non-standard way using 7.2.1.7
+					http://tools.cisco.com/Support/SNMP/do/BrowseOID.do?local=en&translate=Translate&objectInput=1.3.6.1.2.1.10.7.2.1.7
 					*/
-					$val=preg_replace('/(\S+\s+\S+)\s/', '$1,', $val);
-					$valar=explode(',',$val);
-					//Get rid of the current value so the hex to decimal values can replace it
-					unset($val);
-					//Convert each hex VLAN value to decimal
-					foreach($valar as $v){
-						$val[]=hexdec($v);
+					} else if($commandstring=="SNMPv2-SMI::transmission.7.2.1.7"){
+						if($val==0){
+							$val="Full";
+						} else if($val>0){
+							$val="Half";
+						} else {
+							$val="";
+						}
+					} else if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.4"){
+						if($val==1){
+							$val="UntagAll";
+						} else if($val==2){
+							$val="TagAll";
+						} else if($val==5){
+							$val="UntagPvidOnly";
+						} else if($val==6){
+							$val="TagPvidOnly";
+						} else {
+							$val="Unknown";
+						}
+					//Avaya VLAN port members
+					} else if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.3"){
+						//Get rid of quotes and extra space
+						$val=trim(preg_replace('/"/','',$val));
+						//Replace every other space with a comma
+						/*
+						VLAN values are in hex like this:
+						00 01 00 28 00 29 03 E8
+						Replacing every other space with a comma lets the code isolate each VLAN
+						00 01,00 28,00 29,03 E8
+						Got code from here: http://stackoverflow.com/questions/4194818/how-to-replace-every-second-white-space
+						*/
+						$val=preg_replace('/(\S+\s+\S+)\s/', '$1,', $val);
+						$valar=explode(',',$val);
+						//Get rid of the current value so the hex to decimal values can replace it
+						unset($val);
+						//Convert each hex VLAN value to decimal
+						foreach($valar as $v){
+							$val[]=hexdec($v);
+						}
+						//If there's only 1 value, don't store it as an array
+						if(count($val)==1) $val=$val[0];
+					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13"){
+						if($val==1){
+							$val="Trunk";
+						} else if($val==2){
+							$val="DTP Disabled";
+						} else if($val==3){
+							$val="Trunk Desirable";
+						} else if($val==4){
+							$val="Auto";
+						} else if($val==5){
+							$val="Trunk NoNegotiate";
+						}
+					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14"){
+						if($val==2){
+							$val="Access";
+						} else if($val==1){
+							$val="Trunk";
+						} else {
+							$val="Unknown";
+						}
+					} else if($commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5"){
+						if($val==1){
+							$val="Access";
+						} else if($val==2){
+							$val="Trunk";
+						} else {
+							$val="Unknown";
+						}
+					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1"){
+						$val=trim(preg_replace('/\"/','',$val));
+					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1"){
+						if($val==1){
+							$val="Operational";
+						} else if($val==2){
+							$val="Suspended";
+						} else if($val==3){
+							$val="mtuTooBigForDevice";
+						} else if($val==4){
+							$val="mtuTooBigForTrunk";
+						}
 					}
-					//If there's only 1 value, don't store it as an array
-					if(count($val)==1) $val=$val[0];
-				} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14"){
-					if($val==2){
-						$val="Access";
-					} else if($val==1){
-						$val="Trunk";
+					$finar[$id]=$val;
+				//Handle the index to MAC MIB
+				} else if($snmpval && (preg_match('/SNMPv2-SMI::mib-2.17.4.3.1/',$commandstring) || preg_match('/1.3.6.1.4.1.25506.8.35.3.1.1/',$commandstring))){
+					//echo "SNMPVAL: $snmpval<br />";
+					//1.3.6.1.4.1.25506.8.35.3.1.1 - H3C MAC format
+					if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1" || $commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
+						list($remain,$val)=explode(' ',$snmpval,2);
+						//Remove quotes, get rid of extra spaces on the right, replace spaces between octets with colons, and convert lower case to upper case
+						$val=strtoupper(preg_replace('/ /',':',rtrim(preg_replace('/"/','',$val))));
+						if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1"){
+							$id=preg_replace('/mib-2.17.4.3.1.1./','',$remain);
+						} else if($commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
+							$id=preg_replace('/iso.3.6.1.4.1.25506.8.35.3.1.1.1./','',$remain);
+						}
 					} else {
-						$val="Unknown";
+						list($remain,$id)=explode(' ',$snmpval);
+						if($commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.3"){
+							$val=preg_replace('/iso.3.6.1.4.1.25506.8.35.3.1.1.3./','',$remain);
+						} else {
+							$val=preg_replace('/mib-2.17.4.3.1.2./','',$remain);
+						}
 					}
-				} else if($commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5"){
-					if($val==1){
-						$val="Access";
-					} else if($val==2){
-						$val="Trunk";
-					} else {
-						$val="Unknown";
+					//Put data into array
+					if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1" || $commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
+						$finar[$id]=$val;
+					//ID 0 is ID's used for MAC address of the device itself. ID's over 1000 are VLAN's
+					//} else if($id!=0 && $id<1000){
+					} else if($id!=0){
+						//Temporary array to keep track of what keys have been used already
+						if(!in_array($id,$tmpused)){
+							$tmpused[]=$id;
+							$finar[$id]=array($val);
+						} else {
+							array_push($finar[$id],$val);
+						}
 					}
-				}
-				$finar[$id]=$val;
-			//Handle the index to MAC MIB
-			} else if($snmpval && (preg_match('/SNMPv2-SMI::mib-2.17.4.3.1/',$commandstring) || preg_match('/1.3.6.1.4.1.25506.8.35.3.1.1/',$commandstring))){
-				//echo "SNMPVAL: $snmpval<br />";
-				//1.3.6.1.4.1.25506.8.35.3.1.1 - H3C MAC format
-				if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1" || $commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
-					list($remain,$val)=explode(' ',$snmpval,2);
-					//Remove quotes, get rid of extra spaces on the right, replace spaces between octets with colons, and convert lower case to upper case
-					$val=strtoupper(preg_replace('/ /',':',rtrim(preg_replace('/"/','',$val))));
-					if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1"){
-						$id=preg_replace('/mib-2.17.4.3.1.1./','',$remain);
-					} else if($commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
-						$id=preg_replace('/iso.3.6.1.4.1.25506.8.35.3.1.1.1./','',$remain);
-					}
-				} else {
+				//Handle the ARP MIB
+				} else if($snmpval && $commandstring=="IP-MIB::ipNetToMediaPhysAddress"){
 					list($remain,$id)=explode(' ',$snmpval);
-					if($commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.3"){
-						$val=preg_replace('/iso.3.6.1.4.1.25506.8.35.3.1.1.3./','',$remain);
-					} else {
-						$val=preg_replace('/mib-2.17.4.3.1.2./','',$remain);
+					//Isolate the IP address
+					list($junk,$remain)=explode('.',$remain,2);
+					list($junk,$val)=explode('.',$remain,2);
+					//Convert 0:b:ab:7 to 00:0b:ab:07
+					$octet=split(":",$id);
+					$id="";
+					foreach($octet as $oct) {
+						if(strlen($oct)==1) $oct="0" . $oct;
+						$id=$id . $oct . ":";
 					}
-				}
-				//Put data into array
-				if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1" || $commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
-					$finar[$id]=$val;
-				//ID 0 is ID's used for MAC address of the device itself. ID's over 1000 are VLAN's
-				//} else if($id!=0 && $id<1000){
-				} else if($id!=0){
-					//Temporary array to keep track of what keys have been used already
-					if(!in_array($id,$tmpused)){
-						$tmpused[]=$id;
-						$finar[$id]=array($val);
-					} else {
-						array_push($finar[$id],$val);
+					//Remove last colon from string and covert to uppercase
+					$id=strtoupper(substr($id,0,-1));
+					if($id && $id!='FF:FF:FF:FF:FF:FF'){
+						$finar[$id]=$val;
 					}
-				}
-			//Handle the ARP MIB
-			} else if($snmpval && $commandstring=="IP-MIB::ipNetToMediaPhysAddress"){
-				list($remain,$id)=explode(' ',$snmpval);
-				//Isolate the IP address
-				list($junk,$remain)=explode('.',$remain,2);
-				list($junk,$val)=explode('.',$remain,2);
-				//Convert 0:b:ab:7 to 00:0b:ab:07
-				$octet=split(":",$id);
-				$id="";
-				foreach($octet as $oct) {
-					if(strlen($oct)==1) $oct="0" . $oct;
-					$id=$id . $oct . ":";
-				}
-				//Remove last colon from string and covert to uppercase
-				$id=strtoupper(substr($id,0,-1));
-				if($id && $id!='FF:FF:FF:FF:FF:FF'){
-					$finar[$id]=$val;
-				}
-			//Handle Juniper VLAN Tagging
-			} else if($snmpval && $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.4"){
-				//Get the tagging info
-				list($remain,$tagging)=explode(' ',$snmpval);
-				//Get the interface and VLAN ID
-				$remain=preg_replace('/enterprises.2636.3.40.1.5.1.7.1.4./','',$remain);
-				list($vlan,$intid)=explode('.',$remain);
-				$finar[$intid][$vlan]=$tagging;
-			//Handle Netgear VLAN Members
-			} else if($snmpval && ($commandstring=="1.3.6.1.4.1.4526.11.13.1.1.3" || $commandstring=="1.3.6.1.4.1.4526.11.13.1.1.4")){
-				//Port members in hex format converted to binary
-				list($junk,$vlanhextmp)=explode(' ',$snmpval);
-				$vlanhextmp=trim(preg_replace('/\"/','',preg_replace('/ /','',$vlanhextmp)));
-				/*
-				Switch tested on had 8 ports and reported 8 binary bits in "FF" format
-				If there's 16 ports the results might come back as "FF FF" and the next line will help
-				*/
-				$vlanhextmp=preg_replace('/ /','',$vlanhextmp);
-				$vlanhex=HexToBin($vlanhextmp);
-				//Get VLAN
-				$junk=trim(strrev($junk));
-				list($vlan,$junk)=explode('.',$junk,2);
-				$vlan=strrev($vlan);
-				//echo "VLAN: $vlan VLANHEXTMP: a'$vlanhextmp'a VLANBIN: a'$vlanhex'a<br />\n";
-				$binar=str_split($vlanhex);
-				foreach($binar as $b){
-					if(sizeof($finar[$vlan])==0){
-						$finar[$vlan]=array(1=>$b);
-					} else {
-						array_push($finar[$vlan],$b);
+				//Handle Juniper VLAN Tagging
+				} else if($snmpval && $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.4"){
+					//Get the tagging info
+					list($remain,$tagging)=explode(' ',$snmpval);
+					//Get the interface and VLAN ID
+					$remain=preg_replace('/enterprises.2636.3.40.1.5.1.7.1.4./','',$remain);
+					list($vlan,$intid)=explode('.',$remain);
+					$finar[$intid][$vlan]=$tagging;
+				//Handle Netgear VLAN Members
+				} else if($snmpval && ($commandstring=="1.3.6.1.4.1.4526.11.13.1.1.3" || $commandstring=="1.3.6.1.4.1.4526.11.13.1.1.4")){
+					//Port members in hex format converted to binary
+					list($junk,$vlanhextmp)=explode(' ',$snmpval);
+					$vlanhextmp=trim(preg_replace('/\"/','',preg_replace('/ /','',$vlanhextmp)));
+					/*
+					Switch tested on had 8 ports and reported 8 binary bits in "FF" format
+					If there's 16 ports the results might come back as "FF FF" and the next line will help
+					*/
+					$vlanhextmp=preg_replace('/ /','',$vlanhextmp);
+					$vlanhex=HexToBin($vlanhextmp);
+					//Get VLAN
+					$junk=trim(strrev($junk));
+					list($vlan,$junk)=explode('.',$junk,2);
+					$vlan=strrev($vlan);
+					//echo "VLAN: $vlan VLANHEXTMP: a'$vlanhextmp'a VLANBIN: a'$vlanhex'a<br />\n";
+					$binar=str_split($vlanhex);
+					foreach($binar as $b){
+						if(sizeof($finar[$vlan])==0){
+							$finar[$vlan]=array(1=>$b);
+						} else {
+							array_push($finar[$vlan],$b);
+						}
 					}
-				}
-			//Handle H3C Hex VLAN
-			} else if($snmpval && $commandstring=="1.3.6.1.2.1.17.7.1.4.3.1.2"){
-				$rowcounter+=1;
-				/*
-				Turn this:
-				
-				iso.3.6.1.2.1.17.7.1.4.3.1.2.1 "EF FF FF CF 00 00 00 00 00 00 00 3F FF FF E3 80
-				00 00 00 00 00 00 3F FF FF F3 C0 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
-				iso.3.6.1.2.1.17.7.1.4.3.1.2.2 "20 00 01 08 00 00 00 00 00 00 00 40 00 00 84 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
-				
-				Into this:
-				ID: 1 HexVLAN: EFFFFFCF000000000000003FFFFFE3800000000000003FFFFFF3C000000000......
-				ID: 2 HexVLAN: 20000108000000000000004000008400000000000000000000000000000000......
-				*/
-				if(preg_match('/iso/',$snmpval)){
-					$h3cidcnt+=1;
-					if($h3cidcnt>$h3clast && $h3cidcnt>1){
+				//Handle H3C Hex VLAN
+				} else if($snmpval && $commandstring=="1.3.6.1.2.1.17.7.1.4.3.1.2"){
+					$rowcounter+=1;
+					/*
+					Turn this:
+					
+					iso.3.6.1.2.1.17.7.1.4.3.1.2.1 "EF FF FF CF 00 00 00 00 00 00 00 3F FF FF E3 80
+					00 00 00 00 00 00 3F FF FF F3 C0 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+					iso.3.6.1.2.1.17.7.1.4.3.1.2.2 "20 00 01 08 00 00 00 00 00 00 00 40 00 00 84 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+					00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
+					
+					Into this:
+					ID: 1 HexVLAN: EFFFFFCF000000000000003FFFFFE3800000000000003FFFFFF3C000000000......
+					ID: 2 HexVLAN: 20000108000000000000004000008400000000000000000000000000000000......
+					*/
+					if(preg_match('/iso/',$snmpval)){
+						$h3cidcnt+=1;
+						if($h3cidcnt>$h3clast && $h3cidcnt>1){
+							$h3chexar[$vlanidtmp]=$vlanhextmp;
+							$vlanidtmp=""; $vlanhextmp="";
+							$h3clast+=1;
+						}
+						$val=preg_replace('/iso.3.6.1.2.1.17.7.1.4.3.1.2./','',trim($snmpval));
+						list($vlanidtmp,$vlanhextmp)=explode(' ',$val,2);
+						$vlanhextmp=preg_replace('/ /','',trim(preg_replace('/"/','',$vlanhextmp)));
+					} else {
+						$snmpval=preg_replace('/ "/','',$snmpval);
+						$vlanhextmp=$vlanhextmp . preg_replace('/ /','',trim($snmpval));
+					}
+					//After all rows from SNMP results have been processed
+					if(($rowcounter+1)==sizeof($walkresult)){
+						//Put last temporary VLAN ID and Hex info into array
 						$h3chexar[$vlanidtmp]=$vlanhextmp;
-						$vlanidtmp=""; $vlanhextmp="";
-						$h3clast+=1;
-					}
-					$val=preg_replace('/iso.3.6.1.2.1.17.7.1.4.3.1.2./','',trim($snmpval));
-					list($vlanidtmp,$vlanhextmp)=explode(' ',$val,2);
-					$vlanhextmp=preg_replace('/ /','',trim(preg_replace('/"/','',$vlanhextmp)));
-				} else {
-					$snmpval=preg_replace('/ "/','',$snmpval);
-					$vlanhextmp=$vlanhextmp . preg_replace('/ /','',trim($snmpval));
-				}
-				//After all rows from SNMP results have been processed
-				if(($rowcounter+1)==sizeof($walkresult)){
-					//Put last temporary VLAN ID and Hex info into array
-					$h3chexar[$vlanidtmp]=$vlanhextmp;
-					//echo "<pre>"; print_r($h3chexar); echo "</pre>";
-					//Convert Hex VLAN string into binary and create an array that contains VLAN's with a list of ports inside each VLAN represented by a binary status
-					foreach($h3chexar as $vlanid=>$h3chex){
-						if($h3chex){
-							//Convert Hex VLAN to binary
-							$binstr=HexToBin($h3chex);
-							//echo "BINSTR: $binstr<br />\n";
-							$binar=str_split($binstr);
-							$tmpcnt=1;
-							//Put each VLAN into an array. Inside each VLAN, put a list of port membership status (1 or 0)
-							foreach($binar as $b){
-								if(!array_key_exists($vlanid,$finar)){
-									$finar[$vlanid]=array($tmpcnt=>$b);
-								} else {
-									array_push($finar[$vlanid],$b);
+						//echo "<pre>"; print_r($h3chexar); echo "</pre>";
+						//Convert Hex VLAN string into binary and create an array that contains VLAN's with a list of ports inside each VLAN represented by a binary status
+						foreach($h3chexar as $vlanid=>$h3chex){
+							if($h3chex){
+								//Convert Hex VLAN to binary
+								$binstr=HexToBin($h3chex);
+								//echo "BINSTR: $binstr<br />\n";
+								$binar=str_split($binstr);
+								$tmpcnt=1;
+								//Put each VLAN into an array. Inside each VLAN, put a list of port membership status (1 or 0)
+								foreach($binar as $b){
+									if(!array_key_exists($vlanid,$finar)){
+										$finar[$vlanid]=array($tmpcnt=>$b);
+									} else {
+										array_push($finar[$vlanid],$b);
+									}
+									$tmpcnt+=1;
 								}
-								$tmpcnt+=1;
 							}
 						}
 					}
+				//Handle everything else
+				} else {
+					//Get rid of ifDescr, ifName, ifAlias, etc
+					list($junk,$remain)=explode('.',$snmpval,2);
+					//Get ID. Rest of string is value
+					list($id,$val)=explode(' ',$remain,2);
+					//Get rid of "Avaya/Nortel Ethernet Routing Switch" portion of string
+					if(preg_match('/Avaya Ethernet Routing Switch/',$val) || preg_match('/Nortel Ethernet Routing Switch/',$val) || preg_match('/Nortel Networks BayStack/',$val)){
+						list($junk,$val)=explode(' - ',$val);
+					}
+					//Modify speed and bandwidth values
+					if($commandstring=="IF-MIB::ifSpeed" || $commandstring=="IF-MIB::ifInOctets" || $commandstring=="IF-MIB::ifOutOctets"){
+						$val=round($val/1000000,3);
+					}
+					//Switch the ID and value
+					if($commandstring=="IP-MIB::ipAdEntIfIndex"){
+						$tmpval=$val;
+						$val=$id;
+						$id=$tmpval;
+					}
+					$finar[$id]=$val;
 				}
-			//Handle everything else
-			} else if ($snmpval){
-				//Get rid of ifDescr, ifName, ifAlias, etc
-				list($junk,$remain)=explode('.',$snmpval,2);
-				//Get ID. Rest of string is value
-				list($id,$val)=explode(' ',$remain,2);
-				//Get rid of "Avaya/Nortel Ethernet Routing Switch" portion of string
-				if(preg_match('/Avaya Ethernet Routing Switch/',$val) || preg_match('/Nortel Ethernet Routing Switch/',$val) || preg_match('/Nortel Networks BayStack/',$val)){
-					list($junk,$val)=explode(' - ',$val);
-				}
-				//Modify speed and bandwidth values
-				if($commandstring=="IF-MIB::ifSpeed" || $commandstring=="IF-MIB::ifInOctets" || $commandstring=="IF-MIB::ifOutOctets"){
-					$val=round($val/1000000,3);
-				}
-				$finar[$id]=$val;
 			}
 		}
 		return $finar;
@@ -812,10 +863,57 @@
 						if($_POST['debug'] && $_POST['debugoutput']){
 							echo "<pre><font style=\"color: red;\">"; print_r($ciscovlanar); echo "</font></pre>";
 						}
-						//Find trunk or access port: https://supportforums.cisco.com/thread/179460
+						/*Find trunk or access port:
+						Complete answer:	http://blog.glinskiy.com/2010/06/monitoring-trunk-status-via-snmp.html
+						Old answer:			https://supportforums.cisco.com/thread/179460
+						*/
+						$ciscotrunkstatear=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+						if($_POST['debug'] && $_POST['debugoutput']){
+							echo "<pre><font style=\"color: red;\">"; print_r($ciscotrunkstatear); echo "</font></pre>";
+						}
 						$ciscotaggingar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
 						if($_POST['debug'] && $_POST['debugoutput']){
 							echo "<pre><font style=\"color: red;\">"; print_r($ciscotaggingar); echo "</font></pre>";
+						}
+						if($_POST['vlanextra']){
+							$vlanstatusar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($vlanstatusar); echo "</font></pre>";
+							}
+							$vlannamear=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($vlannamear); echo "</font></pre>";
+							}
+							//Create VLAN members array
+							$vlanmembersar=array();
+							$count=0;
+							foreach($ciscovlanar as $intid=>$vlan){
+								//For some reason can't use array_push here so using counters instead
+								if($vlan!=$lastvlan){
+									$count=0;
+								} else {
+									$count+=1;
+								}
+								if(sizeof($vlanmembersar[$vlan]==0)){
+									$vlanmembersar[$vlan][$count]=$ifdescar[$intid];
+								}
+								$lastvlan=$vlan;
+							}
+							//L3 VLAN IP
+							$l3vlanaddrar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"IP-MIB::ipAdEntIfIndex",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							ksort($l3vlanaddrar);
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($l3vlanaddrar); echo "</font></pre>";
+							}
+							$ciscol3vlanmasktmpar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"IP-MIB::ipAdEntNetMask",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							//Key the subnet mask by the VLAN
+							foreach($ciscol3vlanmasktmpar as $ip=>$mask){
+								$l3vlanmaskar[array_search($ip,$l3vlanaddrar)]=$mask;
+							}
+							ksort($l3vlanmaskar);
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($l3vlanmaskar); echo "</font></pre>";
+							}
 						}
 					}
 					if($_POST['vlanchooser'] && $_POST['vlanchoice']=="avaya"){
@@ -1121,7 +1219,7 @@
 								}
 							}
 							//Standard and H3C ways didn't work
-							if(count($ifindextomacindexar)<=2 && count($ifmacindextomacaddar)<=2){
+							if(count($ifindextomacindexar)<1 && count($ifmacindextomacaddar)<1){
 								echo "<font style=\"color: red;\">The MAC address table could not be determined through SNMP</font><br /><br />";
 							} else if($_POST['debug'] && $_POST['debugoutput']){
 								echo "<pre><font style=\"color: red;\">"; print_r($ifmacindextomacaddar); echo "</font></pre>";
@@ -1210,6 +1308,71 @@
 						echo "<br />\n";
 					}
 					if(count($ifdescar)>0){
+						//VLAN Table
+						if($_POST['vlanextra'] && sizeof($vlannamear)>1){
+							//Headerar used for Excel export
+							$vlanheaderar[]="VLAN";
+							$vlanheaderar[]="Status";
+							$vlanheaderar[]="Name";
+							$vlanheaderar[]="IP Address";
+							$vlanheaderar[]="Subnet Mask";
+							$vlanarstring='$vlanid,$vlanstatusar[$vlanid],$vlannamear[$vlanid],$l3vlanaddrar[$vlanid],$l3vlanmaskar[$vlanid]';
+							if($_POST['vlanchoice']=="cisco"){
+								$vlanheaderar[]="Port Members";
+								$vlanarstring=$vlanarstring . ',$tmpar';
+								//$vlanarstring=$vlanarstring . ',$vlanmembersar[$vlanid]';
+							}
+							echo "<table border=1>\n";
+							echo "<tr>";
+							//Print out headerar for table
+							foreach($vlanheaderar as $header){
+								echo "<th>$header</th>";
+							}
+							echo "</tr>\n";
+							foreach($vlannamear as $vlanid=>$vlanname){
+								if($macadd){
+									echo "<tr>";
+									echo "<td>$vlanid</td>";
+									echo "<td>" . $vlanstatusar[$vlanid] . "</td>";
+									echo "<td>$vlanname</td>";
+									echo "<td>" . $l3vlanaddrar[$vlanid] . "</td>";
+									echo "<td>" . $l3vlanmaskar[$vlanid] . "</td>";
+									if($_POST['vlanchoice']=="cisco"){
+										echo "<td style=\"width: 500px;\">";
+										$count=0;
+										$portcount=0;
+										$tmparcnt=0;
+										unset($tmpar);
+										foreach($vlanmembersar[$vlanid] as $port){
+											if($count==0){
+												echo "$port";
+											} else {
+												echo ", $port";
+											}
+											//Used in Excel output so each line in a cell has 3 ports
+											if($portcount==3){
+												$tmparcnt+=1;
+												$portcount=1;
+												$tmpar[$tmparcnt]=$port;
+											} else if($tmparcnt>0 || ($tmparcnt==0 && $portcount>0)){
+												$tmpar[$tmparcnt]=$tmpar[$tmparcnt] . ", $port";
+												$portcount+=1;
+											} else {
+												$tmpar[$tmparcnt]=$port;
+												$portcount+=1;
+											}
+											$count+=1;
+										}
+										echo "</td>";
+									}
+									echo "</tr>\n";
+								}
+								eval('$vlandataar[] = array(' . $vlanarstring . ');');
+							}
+							$excelar[]=array($vlanheaderar,$vlandataar);
+							echo "</table><br />\n";
+						}
+						
 						//Headerar used for Excel export
 						if($_POST['debug'] && $_POST['debugintid']){
 							$headerar[]="Interface ID";
@@ -1241,8 +1404,9 @@
 						}
 						if($_POST['vlanchooser'] && $_POST['vlanchoice']=="cisco"){
 							$headerar[]="VLAN";
-							$headerar[]="Port Type";
-							$dataarstring=$dataarstring . ',$ciscovlanar[$theid],$ciscotaggingar[$theid]';
+							$headerar[]="DTP Mode";
+							$headerar[]="Operational Mode";
+							$dataarstring=$dataarstring . ',$ciscovlanar[$theid],$ciscotrunkstatear[$theid],$ciscotaggingar[$theid]';
 						}
 						if($_POST['vlanchooser'] && $_POST['vlanchoice']=="avaya"){
 							$headerar[]="VLAN PVID";
@@ -1325,6 +1489,7 @@
 								}
 								if($_POST['vlanchooser'] && $_POST['vlanchoice']=="cisco"){
 									echo "<td>" . $ciscovlanar[$theid] . "</td>";
+									echo "<td>" . $ciscotrunkstatear[$theid] . "</td>";
 									echo "<td>" . $ciscotaggingar[$theid] . "</td>";
 								}
 								if($_POST['vlanchooser'] && $_POST['vlanchoice']=="avaya"){
@@ -1538,8 +1703,13 @@
 						}
 						//echo "<pre>"; print_r($excelar); echo "</pre>\n";
 						$_SESSION['excelar']=$excelar;
-						//Freeze the 2nd array (#1) for scrolling in Excel
-						$_SESSION['freezepanearnum']=1;
+						if($_POST['vlanextra'] && sizeof($vlannamear)>1){
+							//Don't use a frozen pane while the VLAN table is on the page because there isn't enough room
+							$_SESSION['freezepanearnum']=-1;
+						} else {
+							//Freeze the 2nd array (#1) for scrolling in Excel
+							$_SESSION['freezepanearnum']=1;
+						}
 						//Properties for excel file
 						$excelpropertiesar=array(
 							 "setTitle"=>"$theip",
