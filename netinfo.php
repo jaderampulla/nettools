@@ -182,7 +182,7 @@
 				</table>
 			</td>
 		</tr>
-		<tr name="vlanextrarow" id="vlanextrarow" <?php if($_POST['vlanchooser'] && $_POST['vlanchoice']=="cisco"){ echo "style=\"display: table-row;\""; } else { echo "style=\"display: none;\""; } ?>>
+		<tr name="vlanextrarow" id="vlanextrarow" <?php if($_POST['vlanchooser'] && ($_POST['vlanchoice']=="cisco" || $_POST['vlanchoice']=="avaya")){ echo "style=\"display: table-row;\""; } else { echo "style=\"display: none;\""; } ?>>
 			<td>&nbsp;&nbsp;&nbsp;&nbsp;
 			<input name="vlanextra" id="vlanextra" type="checkbox" <?php if($_POST['vlanextra']) echo "checked"; ?> />&nbsp;Show Extra VLAN Info</td>
 		</tr>
@@ -199,7 +199,7 @@
 		</script>
 		<script type="text/javascript">
 			function toggleVLANextra(selected) {
-				if (selected.value=="cisco"){
+				if (selected.value=="cisco" || selected.value=="avaya"){
 					document.getElementById("vlanextrarow").style.display="table-row";
 					//alert('Cisco selected: ' + selected.value);
 				} else {
@@ -246,7 +246,7 @@
 					<td colspan="2"><input name="showarp" id="showarp" type="checkbox" <?php if($_POST['showarp']) echo "checked"; ?> />&nbsp;Show ARP table from router</td>
 				</tr>
 				<tr>
-					<td colspan="2"><input name="ignoredns" id="ignoredns" type="checkbox" onchange="ignoredns_changer()" <?php if($_POST['ignoredns']) echo "checked"; ?> />&nbsp;Ignore DNS</td>
+					<td colspan="2"><input name="ignoredns" id="ignoredns" type="checkbox" onchange="ignoredns_changer()" <?php if($_POST['ignoredns']) echo "checked"; ?> />&nbsp;Ignore DNS (Reduces script run time when PTR records aren't configured)</td>
 				</tr>
 				<script type="text/javascript">
 				function ignoredns_changer() {
@@ -424,18 +424,15 @@
 				SNMPv2-SMI::enterprises.2272.1.3.3.1.7 		- Avaya VLAN port PVID
 				SNMPv2-SMI::enterprises.2272.1.3.3.1.4 		- Avaya VLAN port tagging
 				SNMPv2-SMI::enterprises.2272.1.3.3.1.3 		- Avaya VLAN port members
+				SNMPv2-SMI::enterprises.2272.1.3.2.1.2		- Avaya VLAN names
+				SNMPv2-SMI::enterprises.2272.1.3.2.1.6		- Avaya VLAN Index ID
 				1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5			- Juniper VLAN ID's
 				1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5			- Juniper VLAN port mode
 				*/
-				if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || preg_match('/SNMPv2-SMI::enterprises.2272.1.3.3.1/',$commandstring) || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1")){
-					//Split value and ID
-					if($commandstring=="SNMPv2-SMI::enterprises.2272.1.3.3.1.3"){
-						list($remain,$val)=explode(' ',$snmpval,2);
-					} else {
-						list($remain,$val)=explode(' ',$snmpval);
-					}
+				if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || preg_match('/SNMPv2-SMI::enterprises.2272.1.3.3.1/',$commandstring) || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1" || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.2") || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.6"){
+					list($remain,$val)=explode(' ',$snmpval,2);
 					//Get ID by reversing string and exploding on first instance of "."
-					list($id,$junk)=explode(".", strrev($remain));
+					list($id,$junk)=explode(".",strrev($remain));
 					//Reverse the ID back again
 					$id=strrev($id);
 					//Standard way using 7.2.1.19
@@ -521,7 +518,11 @@
 						} else {
 							$val="Unknown";
 						}
-					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1"){
+					/*
+					Cisco VLAN Name
+					Avaya VLAN Name
+					*/
+					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.2"){
 						$val=trim(preg_replace('/\"/','',$val));
 					} else if($commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1"){
 						if($val==1){
@@ -596,6 +597,16 @@
 					$remain=preg_replace('/enterprises.2636.3.40.1.5.1.7.1.4./','',$remain);
 					list($vlan,$intid)=explode('.',$remain);
 					$finar[$intid][$vlan]=$tagging;
+				//Handle Avaya VLAN IP/Subnet
+				} else if($snmpval && ($commandstring=="SNMPv2-SMI::enterprises.2272.1.8.2.1.2" || $commandstring=="SNMPv2-SMI::enterprises.2272.1.8.2.1.3")){
+					//Use tmp to replace in next line
+					list($junk,$commandstringtmp)=explode('::',$commandstring); $commandstringtmp=$commandstringtmp . ".";
+					$snmpval=preg_replace("/$commandstringtmp/",'',$snmpval);
+					//Separate value
+					list($extra,$val)=explode(' ',$snmpval);
+					//Separate ID
+					list($id,$junk)=explode('.',$extra,2);
+					$finar[$id]=$val;
 				//Handle Netgear VLAN Members
 				} else if($snmpval && ($commandstring=="1.3.6.1.4.1.4526.11.13.1.1.3" || $commandstring=="1.3.6.1.4.1.4526.11.13.1.1.4")){
 					//Port members in hex format converted to binary
@@ -930,6 +941,33 @@
 						$avayavlanmembersar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.2272.1.3.3.1.3",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
 						if($_POST['debug'] && $_POST['debugoutput']){
 							echo "<pre><font style=\"color: red;\">"; print_r($avayavlanmembersar); echo "</font></pre>";
+						}
+						if($_POST['vlanextra']){
+							$vlannamear=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.2272.1.3.2.1.2",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($vlannamear); echo "</font></pre>";
+							}
+							$vlanindexidar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.2272.1.3.2.1.6",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							foreach($vlanindexidar as $vlan=>$vlanindex){
+								$vlanstatusar[$vlan]=$ifoperstatusar[$vlanindex];
+							}
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($vlanstatusar); echo "</font></pre>";
+							}
+							$l3vlanaddrtmpar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.2272.1.8.2.1.2",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							foreach($l3vlanaddrtmpar as $id=>$l3vlanaddr){
+								$l3vlanaddrar[array_search($id,$vlanindexidar)]=$l3vlanaddr;
+							}
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($l3vlanaddrar); echo "</font></pre>";
+							}
+							$l3vlanmasktmpar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"SNMPv2-SMI::enterprises.2272.1.8.2.1.3",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
+							foreach($l3vlanmasktmpar as $id=>$l3mask){
+								$l3vlanmaskar[array_search($id,$vlanindexidar)]=$l3mask;
+							}
+							if($_POST['debug'] && $_POST['debugoutput']){
+								echo "<pre><font style=\"color: red;\">"; print_r($l3vlanmaskar); echo "</font></pre>";
+							}
 						}
 						//VLAN membership: http://www.mibdepot.com/cgi-bin/getmib3.cgi?win=mib_a&i=1&n=RAPID-CITY&r=avaya&f=rc.mib&v=v2&t=tab&o=rcVlanPortVlanIds
 					}
