@@ -246,7 +246,7 @@
 					<td colspan="2"><input name="showarp" id="showarp" type="checkbox" <?php if($_POST['showarp']) echo "checked"; ?> />&nbsp;Show ARP table from router</td>
 				</tr>
 				<tr>
-					<td colspan="2"><input name="ignoredns" id="ignoredns" type="checkbox" onchange="ignoredns_changer()" <?php if($_POST['ignoredns']) echo "checked"; ?> />&nbsp;Ignore DNS (Reduces script run time when PTR records aren't configured)</td>
+					<td colspan="2"><input name="ignoredns" id="ignoredns" type="checkbox" onchange="ignoredns_changer()" <?php if($_POST['ignoredns']) echo "checked"; ?> />&nbsp;Ignore DNS (Can reduces script run time)</td>
 				</tr>
 				<script type="text/javascript">
 				function ignoredns_changer() {
