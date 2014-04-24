@@ -1692,7 +1692,10 @@
 									}
 								//ARP table and DNS are unavailable
 								} else if($_POST['clientarp'] && $arpworks==false){
-									echo "<td>&nbsp;</td><td>&nbsp;</td>";
+									echo "<td>&nbsp;</td>";
+									if(!$_POST['ignoredns']){
+										echo "<td>&nbsp;</td>";
+									}
 								}
 								if($_POST['trafficstats']){
 									echo "<td>" . $ifinoctetsar[$theid] . "</td>";
