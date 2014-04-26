@@ -644,7 +644,7 @@
 
   00-00-64   (hex)		Yokogawa Electric Corporation
   000064     (base 16)		Yokogawa Electric Corporation
-  				9-2-32 Nakacho Musashino-Shi
+  				2-9-32 Nakacho Musashino-shi
 				Tokyo
 				180-8750
 				JAPAN
@@ -69869,6 +69869,13 @@
 				Shenzhen Guangdong 518057
 				CHINA
 
+  00-6B-8E   (hex)		Shanghai Feixun Communication Co.,Ltd.
+  006B8E     (base 16)		Shanghai Feixun Communication Co.,Ltd.
+  				Building 90,No,4855,Guangfulin Road
+				,Songjiang District
+				Shanghai 201616
+				CHINA
+
   00-6B-9E   (hex)		VIZIO Inc
   006B9E     (base 16)		VIZIO Inc
   				39 Tesla
@@ -82219,12 +82226,6 @@
 				New Taipei city  23504
 				TAIWAN, PROVINCE OF CHINA
 
-  08-49-29   (hex)		CYBATI
-  084929     (base 16)		CYBATI
-  				1701 East Empire Street, Suite 360
-				Bloomington IL 61704
-				UNITED STATES
-
   08-4E-1C   (hex)		H2A Systems, LLC
   084E1C     (base 16)		H2A Systems, LLC
   				7545 Irvine Center Drive
@@ -83005,6 +83006,13 @@
 				Kulim Hi-Tech Park
 				Kulim Kedah 09000
 				MALAYSIA
+
+  0C-8C-8F   (hex)		Kamo Technology Limited
+  0C8C8F     (base 16)		Kamo Technology Limited
+  				Room 1502, 15/F., Yue Xiu Building,
+				160-174 Lockhart Road,
+				Wanchai Hong Kong 160-174
+				CHINA
 
   0C-8C-DC   (hex)		Suunto Oy
   0C8CDC     (base 16)		Suunto Oy
@@ -87036,6 +87044,12 @@
   				218,Qianwangang Road, Qingdao Economic&amp;Technological Development Zone
 				Qingdao Shandong 266510
 				CHINA
+
+  24-E3-14   (hex)		Apple
+  24E314     (base 16)		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
 
   24-E6-BA   (hex)		JSC Zavod im. Kozitsky
   24E6BA     (base 16)		JSC Zavod im. Kozitsky
@@ -98755,6 +98769,12 @@
 				KUNSHAN SUZHOU 215300
 				CHINA
 
+  70-5B-2E   (hex)		M2Communication Inc.
+  705B2E     (base 16)		M2Communication Inc.
+  				Room 12, 18F., No.65, Gaotie 7th Road
+				Zhubei City Hsinchu County 302
+				TAIWAN, PROVINCE OF CHINA
+
   70-5C-AD   (hex)		Konami Gaming Inc
   705CAD     (base 16)		Konami Gaming Inc
   				585 Trade Center Drive
@@ -99786,6 +99806,12 @@
 				Haidian District
 				Beijing China 100089
 				CHINA
+
+  74-F4-13   (hex)		Maxwell Forest
+  74F413     (base 16)		Maxwell Forest
+  				Level 2, 51 Murray Street
+				Pyrmont NSW 2009
+				AUSTRALIA
 
   74-F6-12   (hex)		ARRIS Group, Inc.
   74F612     (base 16)		ARRIS Group, Inc.
@@ -107510,6 +107536,13 @@
 				Lawrenceville GA 30044
 				UNITED STATES
 
+  A4-A4-D3   (hex)		Bluebank Communication Technology Co.Ltd
+  A4A4D3     (base 16)		Bluebank Communication Technology Co.Ltd
+  				No.13-2.Jiang Ying Road,
+				Nan An District
+				Chongqing 401336
+				CHINA
+
   A4-A8-0F   (hex)		Shenzhen Coship Electronics Co., Ltd.
   A4A80F     (base 16)		Shenzhen Coship Electronics Co., Ltd.
   				Rainbow Bldg., North, Hi-Tech Industrial Park, Nanshan District,
@@ -107893,6 +107926,13 @@
   				Wei fang Export processing Zone
 				Wei Fang Shan Dong 261205
 				CHINA
+
+  A8-32-9A   (hex)		Digicom Futuristic Technologies Ltd.
+  A8329A     (base 16)		Digicom Futuristic Technologies Ltd.
+  				406 Mirror Tower, Modi Road, TST
+				Kowlon
+				000086
+				HONG KONG
 
   A8-39-44   (hex)		Actiontec Electronics, Inc
   A83944     (base 16)		Actiontec Electronics, Inc
@@ -117732,6 +117772,12 @@
 				Fort Wayne Indiana 46803
 				UNITED STATES
 
+  E4-5D-52   (hex)		Avaya, Inc
+  E45D52     (base 16)		Avaya, Inc
+  				211 Mount Airy Road
+				Basking Ridge NJ 07920-2311
+				UNITED STATES
+
   E4-64-49   (hex)		ARRIS Group, Inc.
   E46449     (base 16)		ARRIS Group, Inc.
   				3871 Lakefield Drive
@@ -118366,6 +118412,12 @@
   				Via Tortona 72
 				Milano  20144
 				ITALY
+
+  E8-80-2E   (hex)		Apple
+  E8802E     (base 16)		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
 
   E8-80-D8   (hex)		GNTEK Electronics Co.,Ltd.
   E880D8     (base 16)		GNTEK Electronics Co.,Ltd.
