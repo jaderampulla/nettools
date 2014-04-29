@@ -1311,8 +1311,8 @@
 								echo "<font style=\"color: red;\">The router was reachable through SNMP, but the ARP table is unavailable.</font><br /><br />";
 							}
 						}
-					} else if(strlen($testrouterip)<1){
-						echo "<font style=\"color: red;\">The router was not reachable through ICMP. Trying to ignore the ping test</font><br /><br />";
+					} else if($_POST['clientarp'] && $ignoreping==false && strlen($testrouterip)<1){
+						echo "<font style=\"color: red;\">The router was not reachable through ICMP. Try to ignore the ping test</font><br /><br />";
 					}
 					if($_POST['trafficstats']){
 						$ifinoctetsar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"IF-MIB::ifInOctets",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
