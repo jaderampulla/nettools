@@ -429,7 +429,7 @@
 				1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5			- Juniper VLAN ID's
 				1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5			- Juniper VLAN port mode
 				*/
-				if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || preg_match('/SNMPv2-SMI::enterprises.2272.1.3.3.1/',$commandstring) || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1" || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.2") || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.6"){
+				if($snmpval && ($commandstring=="SNMPv2-SMI::transmission.7.2.1.19" || $commandstring=="SNMPv2-SMI::transmission.7.2.1.7" || $commandstring=="SNMPv2-SMI::enterprises.9.9.68.1.2.2.1.2" || strstr($commandstring,'SNMPv2-SMI::enterprises.2272.1.3.3.1') || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.13" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.6.1.1.14" || $commandstring=="SNMPv2-SMI::mib-2.17.1.4.1.2" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.5.1.5" || $commandstring=="1.3.6.1.4.1.2636.3.40.1.5.1.7.1.5" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.4.1" || $commandstring=="SNMPv2-SMI::enterprises.9.9.46.1.3.1.1.2.1" || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.2") || $commandstring=="SNMPv2-SMI::enterprises.2272.1.3.2.1.6"){
 					list($remain,$val)=explode(' ',$snmpval,2);
 					//Get ID by reversing string and exploding on first instance of "."
 					list($id,$junk)=explode(".",strrev($remain));
@@ -537,7 +537,7 @@
 					}
 					$finar[$id]=$val;
 				//Handle the index to MAC MIB
-				} else if($snmpval && (preg_match('/SNMPv2-SMI::mib-2.17.4.3.1/',$commandstring) || preg_match('/1.3.6.1.4.1.25506.8.35.3.1.1/',$commandstring))){
+				} else if($snmpval && (strstr($commandstring,'SNMPv2-SMI::mib-2.17.4.3.1') || strstr($commandstring,'1.3.6.1.4.1.25506.8.35.3.1.1'))){
 					//echo "SNMPVAL: $snmpval<br />";
 					//1.3.6.1.4.1.25506.8.35.3.1.1 - H3C MAC format
 					if($commandstring=="SNMPv2-SMI::mib-2.17.4.3.1.1" || $commandstring=="1.3.6.1.4.1.25506.8.35.3.1.1.1"){
@@ -658,7 +658,7 @@
 					ID: 1 HexVLAN: EFFFFFCF000000000000003FFFFFE3800000000000003FFFFFF3C000000000......
 					ID: 2 HexVLAN: 20000108000000000000004000008400000000000000000000000000000000......
 					*/
-					if(preg_match('/iso/',$snmpval)){
+					if(strstr($snmpval,'iso')){
 						$h3cidcnt+=1;
 						if($h3cidcnt>$h3clast && $h3cidcnt>1){
 							$h3chexar[$vlanidtmp]=$vlanhextmp;
@@ -704,8 +704,15 @@
 					//Get ID. Rest of string is value
 					list($id,$val)=explode(' ',$remain,2);
 					//Get rid of "Avaya/Nortel Ethernet Routing Switch" portion of string
-					if(preg_match('/Avaya Ethernet Routing Switch/',$val) || preg_match('/Nortel Ethernet Routing Switch/',$val) || preg_match('/Nortel Networks BayStack/',$val)){
+					if(strstr($val,'Avaya Ethernet Routing Switch') || strstr($val,'Nortel Ethernet Routing Switch') || strstr($val,'Nortel Networks BayStack')){
 						list($junk,$val)=explode(' - ',$val);
+					}
+					//Fix interface description on Avaya 8600/8800
+					if((strstr($val,'Port') && strstr($val,'Name')) || (strstr($val,'Gbic') && strstr($val,'Port'))){
+						//Remove everything after "Name" which can include port descriptions
+						$val=substr($val,0,strpos($val,' Name'));
+						//Remove everything before "Port"
+						$val=strstr($val,"Port");
 					}
 					//Modify speed and bandwidth values
 					if($commandstring=="IF-MIB::ifSpeed" || $commandstring=="IF-MIB::ifInOctets" || $commandstring=="IF-MIB::ifOutOctets"){
@@ -772,13 +779,13 @@
 				//Check to make sure the device is SNMP capable
 				$testsnmp=StandardSNMPGet($theip,$snmpversion,$snmpcommstring,"SNMPv2-MIB::sysName.0",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass,"-O qv","showerrors");
 				//echo "TESTSNMP: $testsnmp<br />";
-				if(preg_match('/user name/',$testsnmp)){
+				if(strstr($testsnmp,'user name')){
 					echo "<br />The SNMPv3 username you entered is incorrect.\n";
-				} else if(preg_match('/Authentication failure/',$testsnmp)){
+				} else if(strstr($testsnmp,'Authentication failure')){
 					echo "<br />The SNMPv3 authentication protocol and/or password you entered is incorrect.\n";
-				} else if(preg_match('/Decryption error/',$testsnmp)){
+				} else if(strstr($testsnmp,'Decryption error')){
 					echo "<br />The SNMPv3 privacy protocol you entered is incorrect.\n";
-				} else if((strlen($testsnmp)==0 || preg_match('/Timeout/',$testsnmp)) && $snmpversion==3){
+				} else if((strlen($testsnmp)==0 || strstr($testsnmp,'Timeout')) && $snmpversion==3){
 					echo "<br />The IP address '" . $_POST['theip'] . "' is up but not responsive to SNMP queries.<br />Either the SNMPv3 privacy password you entered is incorrect, or SNMPv3 is not configured on the device.\n";
 				} else if(strlen($testsnmp)==0 && $snmpversion==2){
 					echo "<br />The IP address '" . $_POST['theip'] . "' is up but not responsive to SNMP queries with RO community string you entered.\n";
@@ -968,6 +975,89 @@
 							if($_POST['debug'] && $_POST['debugoutput']){
 								echo "<pre><font style=\"color: red;\">"; print_r($l3vlanmaskar); echo "</font></pre>";
 							}
+							//Create array of port descriptions to VLAN mappings
+							foreach($avayavlanmembersar as $snmpid=>$vlans){
+								//If the port is part of multiple VLAN's
+								if(count($vlans)>1){
+									$tmpcnt=0;
+									foreach($vlans as $vlan){
+										if($tmpcnt==0){
+											$tmpvlan=$vlan;
+										} else {
+											$tmpvlan=$tmpvlan . ",$vlan";
+										}
+										$tmpcnt+=1;
+									}
+									$vlans=$tmpvlan;
+								}
+								//Stacks use the format "Unit 1 Port 1" where everything else uses the format "Port 1" or "Port 1/1"
+								if(strstr($ifdescar[$snmpid],'Unit')){
+									$port=trim(preg_replace('/ Port /','/',preg_replace('/Unit /','',$ifdescar[$snmpid])));
+								} else {
+									list($junk,$port)=explode(' ',$ifdescar[$snmpid]);
+								}
+								$avayavlanportar[$port]=$vlans;
+							}
+							function AvayaVLANRange($vlanmembersar,$lastvlan,$vlans,$port,&$lastvlanport){
+								//First VLAN entry
+								if($lastvlan==0){
+									$vlanmembersar[$vlans]=$port;
+								//Same VLAN entry
+								} else if($lastvlan==$vlans){
+									//If there's already a range - only checks a range for the last element
+									if(strstr(end(preg_split('/,/',$vlanmembersar[$vlans])),'-')){
+										//Reverse the string, remove anything before a dash, then reverse it again and add the port
+										$vlanmembersar[$vlans]=strrev(strstr(strrev($vlanmembersar[$vlans]),'-')) . "$port";
+									//If there's not a range
+									} else {
+										$vlanmembersar[$vlans]=$vlanmembersar[$vlans] . "-$port";
+									}
+								//Different VLAN entry
+								} else if($lastvlan!=$vlans){
+									//No existing members
+									if(count($vlanmembersar[$vlans])==0){
+										$vlanmembersar[$vlans]=$port;
+									//Last member was 1 less, so increment the range
+									} else if(strstr(end(preg_split('/,/',$vlanmembersar[$vlans])),'-') && ($port-1)==$lastvlanport[$vlans]){
+										//Reverse the string, remove anything before a dash, then reverse it again and add the port
+										$vlanmembersar[$vlans]=strrev(strstr(strrev($vlanmembersar[$vlans]),'-')) . "$port";
+									//Last member was a single port not a range and it's 1 less than the current, so create a range
+									} else if(($port-1)==$lastvlanport[$vlans]){
+										$vlanmembersar[$vlans]=$vlanmembersar[$vlans] . "-$port";
+									//Last member was a single port not a range and it's not 1 less than the current, so just add the port
+									} else {
+										$vlanmembersar[$vlans]=$vlanmembersar[$vlans] . ",$port";
+									}
+								}
+								//Record the last port used in the VLAN. Used for adding a port to a different VLAN than the last
+								$lastvlanport[$vlans]=$port;
+								return $vlanmembersar;
+							}
+							
+							$lastvlan=0;
+							foreach($avayavlanportar as $port=>$vlans){
+								//Stack or chassis
+								if(preg_match('/\//',$port)){
+									/* Need code for a stack */
+								//Single switch with multiple ports on this line
+								} else if(strstr($vlans,',')){
+									$tmpvlans=explode(',',$vlans);
+									foreach($tmpvlans as $vlan){
+										//echo "LASTVLANPORT: {$lastvlanport[$vlan]}, PORT: $port, LASTVLAN: $lastvlan, VLAN: $vlan<br />\n";
+										$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlan,$port,$lastvlanport);
+										$lastvlan=$vlan;
+									}
+									//$lastvlan=$vlans;
+								//Single switch with single port on this line
+								} else {
+									//echo "LASTVLANPORT: {$lastvlanport[$vlans]}, PORT: $port, LASTVLAN: $lastvlan, VLAN: $vlans<br />\n";
+									$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlans,$port,$lastvlanport);
+									$lastvlan=$vlans;
+									$lastport=$port;
+								}
+							}
+							//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
+							//echo "<pre>"; print_r($avayavlanportar); echo "</pre>";
 						}
 						//VLAN membership: http://www.mibdepot.com/cgi-bin/getmib3.cgi?win=mib_a&i=1&n=RAPID-CITY&r=avaya&f=rc.mib&v=v2&t=tab&o=rcVlanPortVlanIds
 					}
@@ -1119,7 +1209,7 @@
 						//Create an array of ports
 						$lastswitchnum=0;
 						foreach($ifdescar as $ifdesctmpval){
-							if(preg_match('/Ethernet/',$ifdesctmpval) && $ifdesctmpval){
+							if(strstr($ifdesctmpval,'Ethernet') && $ifdesctmpval){
 								list($junk,$extra)=explode('Ethernet',$ifdesctmpval);
 								list($switchnum,$junk)=explode('/',$extra);
 								if($lastswitchnum<$switchnum || $lastswitchnum==0){
@@ -1269,7 +1359,7 @@
 						$macouifilear=file("oui.txt");
 						//Get lines in array that have the MAC address and associated vendor
 						foreach($macouifilear as $macouiline){
-							if(preg_match('/hex/',$macouiline)){
+							if(strstr($macouiline,'hex')){
 								$macouitmpar[]=$macouiline;
 							}
 						}
@@ -1289,13 +1379,13 @@
 					if($_POST['clientarp'] && ($ignoreping==true || strlen($testrouterip)>1)){
 						$testroutersnmp=StandardSNMPGet($routerip,$snmpversion,$snmpcommstring,"SNMPv2-MIB::sysName.0",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass,"-O qv","showerrors");
 						//echo "TESTROUTERSNMP: $testroutersnmp<br />";
-						if(preg_match('/user name/',$testroutersnmp)){
+						if(strstr($testroutersnmp,'user name')){
 							echo "<br />The SNMPv3 username you entered is incorrect for the router IP.<br /><font style=\"color: red;\">The ARP table is unavailable.</font><br /><br />\n";
-						} else if(preg_match('/Authentication failure/',$testroutersnmp)){
+						} else if(strstr($testroutersnmp,'Authentication failure')){
 							echo "<br />The SNMPv3 authentication protocol and/or password you entered is incorrect for the router IP.<br /><font style=\"color: red;\">The ARP table is unavailable.</font><br /><br />\n";
-						} else if(preg_match('/Decryption error/',$testroutersnmp)){
+						} else if(strstr($testroutersnmp,'Decryption error')){
 							echo "<br />The SNMPv3 privacy protocol you entered is incorrect for the router IP.<br /><font style=\"color: red;\">The ARP table is unavailable.</font><br /><br />\n";
-						} else if((strlen($testroutersnmp)==0 || preg_match('/Timeout/',$testroutersnmp)) && $snmpversion==3){
+						} else if((strlen($testroutersnmp)==0 || strstr($testroutersnmp,'Timeout')) && $snmpversion==3){
 							echo "<br />The router IP address '$routerip' is up but not responsive to SNMP queries.<br />Either the SNMPv3 privacy password you entered is incorrect, or SNMPv3 is not configured on the router.<br /><font style=\"color: red;\">The ARP table is unavailable.</font><br /><br />\n";
 						} else if(strlen($testroutersnmp)==0 && $snmpversion==2){
 							echo "<br />The router IP address '$routerip' is up but not responsive to SNMP queries with RO community string you entered.<br /><font style=\"color: red;\">The ARP table is unavailable.</font><br /><br />\n";
@@ -1311,8 +1401,8 @@
 								echo "<font style=\"color: red;\">The router was reachable through SNMP, but the ARP table is unavailable.</font><br /><br />";
 							}
 						}
-					} else if($_POST['clientarp'] && $ignoreping==false && strlen($testrouterip)<1){
-						echo "<font style=\"color: red;\">The router was not reachable through ICMP. Try to ignore the ping test</font><br /><br />";
+					} else if(strlen($testrouterip)<1){
+						echo "<font style=\"color: red;\">The router was not reachable through ICMP. Trying to ignore the ping test</font><br /><br />";
 					}
 					if($_POST['trafficstats']){
 						$ifinoctetsar=StandardSNMPWalk($theip,$snmpversion,$snmpcommstring,"IF-MIB::ifInOctets",$snmpv3user,$snmpv3authproto,$snmpv3authpass,$snmpv3seclevel,$snmpv3privproto,$snmpv3privpass);
@@ -1360,6 +1450,10 @@
 								$vlanarstring=$vlanarstring . ',$tmpar';
 								//$vlanarstring=$vlanarstring . ',$vlanmembersar[$vlanid]';
 							}
+							if($_POST['vlanchoice']=="avaya"){
+								$vlanheaderar[]="Port Members";
+								$vlanarstring=$vlanarstring . ',$vlanmembersar[$vlanid]';
+							}
 							echo "<table border=1>\n";
 							echo "<tr>";
 							//Print out headerar for table
@@ -1368,43 +1462,44 @@
 							}
 							echo "</tr>\n";
 							foreach($vlannamear as $vlanid=>$vlanname){
-								if($macadd){
-									echo "<tr>";
-									echo "<td>$vlanid</td>";
-									echo "<td>" . $vlanstatusar[$vlanid] . "</td>";
-									echo "<td>$vlanname</td>";
-									echo "<td>" . $l3vlanaddrar[$vlanid] . "</td>";
-									echo "<td>" . $l3vlanmaskar[$vlanid] . "</td>";
-									if($_POST['vlanchoice']=="cisco"){
-										echo "<td style=\"width: 500px;\">";
-										$count=0;
-										$portcount=0;
-										$tmparcnt=0;
-										unset($tmpar);
-										foreach($vlanmembersar[$vlanid] as $port){
-											if($count==0){
-												echo "$port";
-											} else {
-												echo ", $port";
-											}
-											//Used in Excel output so each line in a cell has 3 ports
-											if($portcount==3){
-												$tmparcnt+=1;
-												$portcount=1;
-												$tmpar[$tmparcnt]=$port;
-											} else if($tmparcnt>0 || ($tmparcnt==0 && $portcount>0)){
-												$tmpar[$tmparcnt]=$tmpar[$tmparcnt] . ", $port";
-												$portcount+=1;
-											} else {
-												$tmpar[$tmparcnt]=$port;
-												$portcount+=1;
-											}
-											$count+=1;
+								echo "<tr>";
+								echo "<td>$vlanid</td>";
+								echo "<td>" . $vlanstatusar[$vlanid] . "</td>";
+								echo "<td>$vlanname</td>";
+								echo "<td>" . $l3vlanaddrar[$vlanid] . "</td>";
+								echo "<td>" . $l3vlanmaskar[$vlanid] . "</td>";
+								if($_POST['vlanchoice']=="cisco"){
+									echo "<td style=\"width: 500px;\">";
+									$count=0;
+									$portcount=0;
+									$tmparcnt=0;
+									unset($tmpar);
+									foreach($vlanmembersar[$vlanid] as $port){
+										if($count==0){
+											echo "$port";
+										} else {
+											echo ", $port";
 										}
-										echo "</td>";
+										//Used in Excel output so each line in a cell has 3 ports
+										if($portcount==3){
+											$tmparcnt+=1;
+											$portcount=1;
+											$tmpar[$tmparcnt]=$port;
+										} else if($tmparcnt>0 || ($tmparcnt==0 && $portcount>0)){
+											$tmpar[$tmparcnt]=$tmpar[$tmparcnt] . ", $port";
+											$portcount+=1;
+										} else {
+											$tmpar[$tmparcnt]=$port;
+											$portcount+=1;
+										}
+										$count+=1;
 									}
-									echo "</tr>\n";
+									echo "</td>";
 								}
+								if($_POST['vlanchoice']=="avaya"){
+									echo "<td>" . $vlanmembersar[$vlanid] . "</td>";
+								}
+								echo "</tr>\n";
 								eval('$vlandataar[] = array(' . $vlanarstring . ');');
 							}
 							$excelar[]=array($vlanheaderar,$vlandataar);
