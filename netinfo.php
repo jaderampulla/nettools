@@ -1871,10 +1871,10 @@
 								echo "$macoui<br />\n";
 							}
 							echo "</font><br />\n";
-							echo "The MAC OUI list is a static file on your server/PC obtained <a target=\"_NEW\" href=\"http://standards.ieee.org/develop/regauth/oui/oui.txt\">here</a>.<br />\n";
-							echo "Your list might not be up to date. Please try manually updating your static file. If you already did, then the MAC address might be spoofed and you can ignore this message.<br /><br />\n";
+							echo "The MAC OUI list is a static file on your server/PC obtained <a target=\"_NEW\" href=\"http://standards.ieee.org/develop/regauth/oui/oui.txt\">here</a>. The file is automatically updated every hour.<br />\n";
+							echo "There's a small chance your list might not be up to date. Please try manually updating your static file. If you already did, then the MAC address might be spoofed and you can ignore this message.<br /><br />\n";
 							echo "For linux, execute this command at the CLI as root or sudo:<br />\n";
-							echo "<i><b>wget -O /var/www/sql/oui.txt -N http://standards.ieee.org/develop/regauth/oui/oui.txt</b></i><br /><br />\n";
+							echo "<i><b>wget -N /var/www/sql/oui.txt -N http://standards.ieee.org/develop/regauth/oui/oui.txt</b></i><br /><br />\n";
 							echo "For Windows, replace the file '<b><i>C:\xampp\htdocs\sql\oui.txt</i></b>' with the contents of the web server version <a target=\"_NEW\" href=\"http://standards.ieee.org/develop/regauth/oui/oui.txt\">here</a>.";
 						}
 					} else {
