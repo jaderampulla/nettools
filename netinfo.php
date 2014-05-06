@@ -1004,13 +1004,16 @@
 									$vlanmembersar[$vlans]=$port;
 								//Same VLAN entry
 								} else if($lastvlan==$vlans){
-									//If there's already a range - only checks a range for the last element
-									if(strstr(end(preg_split('/,/',$vlanmembersar[$vlans])),'-')){
+									//If there's already a range and the last element is 1 less
+									if(strstr(end(preg_split('/,/',$vlanmembersar[$vlans])),'-') && ($port-1)==$lastvlanport[$vlans]){
 										//Reverse the string, remove anything before a dash, then reverse it again and add the port
 										$vlanmembersar[$vlans]=strrev(strstr(strrev($vlanmembersar[$vlans]),'-')) . "$port";
-									//If there's not a range
-									} else {
+									//Last member was a single port not a range and it's 1 less than the current, so create a range
+									} else if(($port-1)==$lastvlanport[$vlans]){
 										$vlanmembersar[$vlans]=$vlanmembersar[$vlans] . "-$port";
+									//If there's not a range OR there's a range but the last element isn't 1 less
+									} else {
+										$vlanmembersar[$vlans]=$vlanmembersar[$vlans] . ",$port";
 									}
 								//Different VLAN entry
 								} else if($lastvlan!=$vlans){
@@ -1033,31 +1036,108 @@
 								$lastvlanport[$vlans]=$port;
 								return $vlanmembersar;
 							}
-							
+							/*
+							Starting a new switch so go back through what was found for the existing switch and put slashes before each membership
+							Example:
+							1,3,9,11,13-46
+							2/1,2/3,2/9,2/11,2/13-2/46
+							*/
+							function AddSlashesToSwitch($vlanar,$switch){
+								//Loop through each VLAN
+								foreach($vlanar as $tmpvlan=>$tmpport){
+									//Isolate each port or range in the VLAN
+									$tmpportar=explode(',',$tmpport);
+									unset($pt);
+									unset($beginar);
+									//If it's a new switch, add a slash to the port or range
+									foreach($tmpportar as $p){
+										if(!preg_match('/\//',$p)){
+											$pt=$pt . "$switch/$p,";
+									//If it's a previous switch that already has a slash, store it for later use
+										} else {
+											$beginar[$tmpvlan]=$beginar[$tmpvlan] . ",$p";
+										}
+									}
+									//Remove trailing comma from new port list
+									$pt=rtrim($pt,",");
+									//Remove beginning comma from old port list
+									$beginar[$tmpvlan]=ltrim($beginar[$tmpvlan],",");
+									//If it's the first switch, build the port list for the VLAN
+									if($switch==1){
+										$returnar[$tmpvlan]=$pt;
+									//If it's not the first switch, add to the port list for the VLAN if there are new ports
+									} else if($pt){
+										$returnar[$tmpvlan]=ltrim($beginar[$tmpvlan] . ",$pt",",");
+									//If it's not the first switch and there are no new ports, keep the list the same
+									} else {
+										$returnar[$tmpvlan]=$beginar[$tmpvlan];
+									}
+								}
+								return $returnar;
+							}
 							$lastvlan=0;
+							$lastswitch=0;
 							foreach($avayavlanportar as $port=>$vlans){
-								//Stack or chassis
-								if(preg_match('/\//',$port)){
-									/* Need code for a stack */
-								//Single switch with multiple ports on this line
-								} else if(strstr($vlans,',')){
+								//echo "<font style=\"color: red;\">PORT: $port</font><br />\n";
+								//If there's multiple VLAN's on the port
+								if(strstr($vlans,',')){
+									//Handle Chassis
+									if(preg_match('/\//',$port)){
+										//Separate switch and port
+										list($currentswitch,$port)=explode('/',$port);
+										//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
+										if($currentswitch!=$lastswitch && $lastswitch>0){
+											$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+										}
+									}
+									//Loop through each VLAN on the port and add it to the array
 									$tmpvlans=explode(',',$vlans);
 									foreach($tmpvlans as $vlan){
-										//echo "LASTVLANPORT: {$lastvlanport[$vlan]}, PORT: $port, LASTVLAN: $lastvlan, VLAN: $vlan<br />\n";
 										$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlan,$port,$lastvlanport);
+										//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
 										$lastvlan=$vlan;
 									}
-									//$lastvlan=$vlans;
 								//Single switch with single port on this line
-								} else {
-									//echo "LASTVLANPORT: {$lastvlanport[$vlans]}, PORT: $port, LASTVLAN: $lastvlan, VLAN: $vlans<br />\n";
+								//If VLAN = 0 it wipes out all other ports in the entry because the first line of AvayaVLANRange indicates the first entry of the first VLAN
+								//Don't need to worry about VLAN 0 for multiple VLAN's on a port because manual configuration is required for that and VLAN 0 cannot exist anyways
+								} else if($vlans>0){
+									//Handle Chassis
+									if(preg_match('/\//',$port)){
+										//Separate switch and port
+										list($currentswitch,$port)=explode('/',$port);
+										//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
+										if($currentswitch!=$lastswitch && $lastswitch>0){
+											$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+										}
+									}
+									//Add the port to the array
 									$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlans,$port,$lastvlanport);
+									//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
 									$lastvlan=$vlans;
 									$lastport=$port;
 								}
+								//Keep track of the last switch. Used when adding slashes once the list of all ports for a switch is known
+								$lastswitch=$currentswitch;
 							}
-							//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
-							//echo "<pre>"; print_r($avayavlanportar); echo "</pre>";
+							$foundslash=false;
+							foreach($vlanmembersar as $testing){
+								if(preg_match('/\//',$testing)){
+									$foundslash=true;
+								}
+							}
+							//Double check the ports. Sometimes there are only VLAN's in a stack configured on a single switch
+							if($foundslash==false){
+								foreach($avayavlanportar as $testing=>$testvlan){
+									if(preg_match('/\//',$testing)){
+										$foundslash=true;
+									}
+								}
+							}
+							//If the string for the first VLAN has slashes in it
+							if($foundslash==true){
+								//The last switch doesn't get slashes for ports during the foreach, so run it after
+								$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+							}
 						}
 						//VLAN membership: http://www.mibdepot.com/cgi-bin/getmib3.cgi?win=mib_a&i=1&n=RAPID-CITY&r=avaya&f=rc.mib&v=v2&t=tab&o=rcVlanPortVlanIds
 					}
@@ -1626,7 +1706,12 @@
 									echo "<td>" . $ciscotaggingar[$theid] . "</td>";
 								}
 								if($_POST['vlanchooser'] && $_POST['vlanchoice']=="avaya"){
-									echo "<td>" . $avayavlanar[$theid] . "</td>";
+									//Catch the case where a PVID was misconfigured and the PVID is not part of the VLAN membership of the port
+									if(!in_array($avayavlanar[$theid],$avayavlanmembersar[$theid]) && $avayavlanar[$theid]!=$avayavlanmembersar[$theid]){
+										echo "<td><font style=\"color: red; font-weight: bold;\">" . $avayavlanar[$theid] . "</font></td>";
+									} else {
+										echo "<td>" . $avayavlanar[$theid] . "</td>";
+									}
 									echo "<td>";
 									if(count($avayavlanmembersar[$theid])==1){
 										echo $avayavlanmembersar[$theid];
@@ -1875,7 +1960,7 @@
 							echo "There's a small chance your list might not be up to date. Please try manually updating your static file. If you already did, then the MAC address might be spoofed and you can ignore this message.<br /><br />\n";
 							echo "For linux, execute this command at the CLI as root or sudo:<br />\n";
 							echo "<i><b>wget -N /var/www/sql/oui.txt -N http://standards.ieee.org/develop/regauth/oui/oui.txt</b></i><br /><br />\n";
-							echo "For Windows, replace the file '<b><i>C:\xampp\htdocs\sql\oui.txt</i></b>' with the contents of the web server version <a target=\"_NEW\" href=\"http://standards.ieee.org/develop/regauth/oui/oui.txt\">here</a>.";
+							echo "For Windows, replace the file '<b><i>C:\\xampp\htdocs\sql\oui.txt</i></b>' with the contents of the web server version <a target=\"_NEW\" href=\"http://standards.ieee.org/develop/regauth/oui/oui.txt\">here</a>.";
 						}
 					} else {
 						echo "<br />SNMP did not return any results. Something is wrong.\n";
