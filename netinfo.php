@@ -179,12 +179,9 @@
 						<td><input type="radio" name="vlanchoice" id="vlanchoice" onclick="toggleVLANextra(this)" value="h3c"<?php if($_POST['vlanchoice']=="h3c" || (!$_POST['vlanchoice']=="h3c" && $defaultvlanchoice=="h3c")) echo " checked"; ?>>H3C</td>
 						<td>&nbsp;</td>
 					</tr>
-				</table>
+				</table><br />
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="vlanextra" id="vlanextra" type="checkbox" <?php if($_POST['vlanextra']) echo "checked"; if($_POST['vlanchoice']!="cisco" && $_POST['vlanchoice']!="avaya" && ($defaultvlanchoice!="avaya" && $defaultvlanchoice!="cisco" && !$_POST['vlanchoice'])) echo " disabled=\"disabled\""; ?> />&nbsp;Show Extra VLAN Info</td>
 			</td>
-		</tr>
-		<tr name="vlanextrarow" id="vlanextrarow" <?php if($_POST['vlanchooser'] && ($_POST['vlanchoice']=="cisco" || $_POST['vlanchoice']=="avaya")){ echo "style=\"display: table-row;\""; } else { echo "style=\"display: none;\""; } ?>>
-			<td>&nbsp;&nbsp;&nbsp;&nbsp;
-			<input name="vlanextra" id="vlanextra" type="checkbox" <?php if($_POST['vlanextra']) echo "checked"; ?> />&nbsp;Show Extra VLAN Info</td>
 		</tr>
 		<script type="text/javascript">
 			function toggleVLAN(vlanchoice) {
@@ -192,18 +189,17 @@
 					document.getElementById("vlanrow").style.display="table-row";
 				} else {
 					document.getElementById("vlanrow").style.display="none";
-					document.getElementById("vlanextrarow").style.display="none";
-					document.getElementById("vlanextra").checked = false;
+					//document.getElementById("vlanextra").checked = false;
 				}
 			}
 		</script>
 		<script type="text/javascript">
 			function toggleVLANextra(selected) {
 				if (selected.value=="cisco" || selected.value=="avaya"){
-					document.getElementById("vlanextrarow").style.display="table-row";
+					document.getElementById("vlanextra").removeAttribute("disabled");
 					//alert('Cisco selected: ' + selected.value);
 				} else {
-					document.getElementById("vlanextrarow").style.display="none";
+					document.getElementById("vlanextra").setAttribute("disabled","disabled");
 					//alert('Something else selected: ' + selected.value);
 					document.getElementById("vlanextra").checked = false;
 				}
