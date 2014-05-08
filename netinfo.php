@@ -1078,46 +1078,49 @@
 							$lastvlan=0;
 							$lastswitch=0;
 							foreach($avayavlanportar as $port=>$vlans){
-								//echo "<font style=\"color: red;\">PORT: $port</font><br />\n";
-								//If there's multiple VLAN's on the port
-								if(strstr($vlans,',')){
-									//Handle Chassis
-									if(preg_match('/\//',$port)){
-										//Separate switch and port
-										list($currentswitch,$port)=explode('/',$port);
-										//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
-										if($currentswitch!=$lastswitch && $lastswitch>0){
-											$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+								//Sometimes there are empty ports with VLAN's...weird
+								if($port){
+									//echo "<font style=\"color: red;\">PORT: $port</font><br />\n";
+									//If there's multiple VLAN's on the port
+									if(strstr($vlans,',')){
+										//Handle Chassis
+										if(preg_match('/\//',$port)){
+											//Separate switch and port
+											list($currentswitch,$port)=explode('/',$port);
+											//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
+											if($currentswitch!=$lastswitch && $lastswitch>0){
+												$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+											}
 										}
-									}
-									//Loop through each VLAN on the port and add it to the array
-									$tmpvlans=explode(',',$vlans);
-									foreach($tmpvlans as $vlan){
-										$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlan,$port,$lastvlanport);
+										//Loop through each VLAN on the port and add it to the array
+										$tmpvlans=explode(',',$vlans);
+										foreach($tmpvlans as $vlan){
+											$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlan,$port,$lastvlanport);
+											//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
+											$lastvlan=$vlan;
+										}
+									//Single switch with single port on this line
+									//If VLAN = 0 it wipes out all other ports in the entry because the first line of AvayaVLANRange indicates the first entry of the first VLAN
+									//Don't need to worry about VLAN 0 for multiple VLAN's on a port because manual configuration is required for that and VLAN 0 cannot exist anyways
+									} else if($vlans>0){
+										//Handle Chassis
+										if(preg_match('/\//',$port)){
+											//Separate switch and port
+											list($currentswitch,$port)=explode('/',$port);
+											//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
+											if($currentswitch!=$lastswitch && $lastswitch>0){
+												$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
+											}
+										}
+										//Add the port to the array
+										$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlans,$port,$lastvlanport);
 										//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
-										$lastvlan=$vlan;
+										$lastvlan=$vlans;
+										$lastport=$port;
 									}
-								//Single switch with single port on this line
-								//If VLAN = 0 it wipes out all other ports in the entry because the first line of AvayaVLANRange indicates the first entry of the first VLAN
-								//Don't need to worry about VLAN 0 for multiple VLAN's on a port because manual configuration is required for that and VLAN 0 cannot exist anyways
-								} else if($vlans>0){
-									//Handle Chassis
-									if(preg_match('/\//',$port)){
-										//Separate switch and port
-										list($currentswitch,$port)=explode('/',$port);
-										//Once all the ports are done for a switch, add slashes before the ports for the switch they're part of
-										if($currentswitch!=$lastswitch && $lastswitch>0){
-											$vlanmembersar=AddSlashesToSwitch($vlanmembersar,$lastswitch);
-										}
-									}
-									//Add the port to the array
-									$vlanmembersar=AvayaVLANRange($vlanmembersar,$lastvlan,$vlans,$port,$lastvlanport);
-									//echo "<pre>"; print_r($vlanmembersar); echo "</pre>";
-									$lastvlan=$vlans;
-									$lastport=$port;
+									//Keep track of the last switch. Used when adding slashes once the list of all ports for a switch is known
+									$lastswitch=$currentswitch;
 								}
-								//Keep track of the last switch. Used when adding slashes once the list of all ports for a switch is known
-								$lastswitch=$currentswitch;
 							}
 							$foundslash=false;
 							foreach($vlanmembersar as $testing){
